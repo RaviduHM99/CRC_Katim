@@ -6,9 +6,7 @@ use ieee.numeric_std.all;
 entity frame_checker_axi is
     generic (
     TDATA_WIDTH : integer := 32;
-    TKEEP_WIDTH : integer := 8/8;
-    TUSER_WDITH : integer := 8;
-    WORDS: integer := 124
+    USER_CHECKSUM : std_logic_vector := x"A254_FCDE"
     );
     port (
     axis_aclk : in std_logic;
@@ -27,7 +25,7 @@ end frame_checker_axi;
 
 architecture rtl of frame_checker_axi is
 
-    constant check_val: std_logic_vector(TDATA_WIDTH - 1 downto 0) := x"A254_FCDE";
+    constant check_val: std_logic_vector(TDATA_WIDTH - 1 downto 0) := USER_CHECKSUM;
     signal frame_counter: integer;
     signal packet_counter: integer;
     signal error_counter: integer;

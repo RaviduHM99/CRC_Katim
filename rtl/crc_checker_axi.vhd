@@ -5,7 +5,7 @@ use ieee.numeric_std.all;
 
 entity crc_checker_axi is
     generic (
-    PAYLOAD_WIDTH : integer := 124; ---- FRAME WIDTH = PAYLOAD WIDTH + CRC VAL
+    FRAME_WIDTH : integer := 124; ---- FRAME WIDTH = PAYLOAD WIDTH + CRC VAL
     DATA_WIDTH : integer := 32;
     CRC_WIDTH : integer := 32;
     CRC_POLY : std_logic_vector := x"04C1_1DB7"
@@ -140,7 +140,7 @@ architecture rtl of crc_checker_axi is
         end if;
     end process;
 
-    m_axis_tlast <= '1' when (word_counter = PAYLOAD_WIDTH and m_axis_tvalid = '1') else '0';
+    m_axis_tlast <= '1' when (word_counter = FRAME_WIDTH and m_axis_tvalid = '1') else '0';
 
     s_axis_tready <= m_axis_tready;
 end rtl;

@@ -1,10 +1,20 @@
 
+---- Data Rate Parameterizable ----
+---- Frame Width Parameterizable ----
+---- User Check Value Parameterizable ----
+---- CRC Polynomial Parameterizable ----
+---- Payload Counting Data Values ----
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity packet_gen_axi is
     generic (
+    FRAME_WIDTH : integer := 124;
+    DATA_RATE_CYCLES : integer := 57;
+    USER_CHECKSUM_INPUT : std_logic_vector := x"A254_FCDE";
+
     TDATA_WIDTH : integer := 32;
     TKEEP_WIDTH : integer := 8/8;
     TUSER_WDITH : integer := 8
@@ -26,8 +36,8 @@ architecture rtl of packet_gen_axi is
     type t_hdr is array(0 to 16) of std_logic_vector(TDATA_WIDTH - 1 downto 0);
     signal hdr : t_hdr;
     signal byte_count : std_logic_vector(31 downto 0);
-    constant byte_count_max : natural := 124;
-    constant data_rate: natural := 57;
+    constant byte_count_max : integer := FRAME_WIDTH;
+    constant data_rate: integer := DATA_RATE_CYCLES;
     constant data_rate_out: natural := 1;
     signal tx_enable : std_logic;
 
@@ -58,7 +68,7 @@ architecture rtl of packet_gen_axi is
     13 => x"11B002F4",
     14 => x"000B0003",
     15 => x"0183017F",
-    16 => x"A254_FCDE");
+    16 => USER_CHECKSUM_INPUT);
 
 
     data_rate_proc: process(axis_aclk)

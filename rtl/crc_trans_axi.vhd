@@ -5,7 +5,8 @@ use ieee.numeric_std.all;
 
 entity crc_trans_axi is
     generic (
-    PAYLOAD_WIDTH : integer := 124;
+    DATA_RATE_CYCLES : integer := 57;
+
     DATA_WIDTH : integer := 32;
     CRC_WIDTH : integer := 32;
     CRC_POLY : std_logic_vector := x"04C1_1DB7"
@@ -31,7 +32,7 @@ architecture rtl of crc_trans_axi is
     signal crc_reg: std_logic_vector(CRC_WIDTH - 1 downto 0);
     signal word_counter: integer range 0 to 500;
 
-    constant data_rate: integer := 57;
+    constant data_rate: integer := DATA_RATE_CYCLES;
     signal rate_count: integer range 0 to 100;
     signal last_data_rate_start: std_logic;
     
