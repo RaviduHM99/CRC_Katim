@@ -35,7 +35,7 @@ architecture rtl of crc_checker is
         variable i : integer;
 
         constant loop_var : integer := CRC_WIDTH;
-        constant crc_initial : std_logic_vector (CRC_WIDTH - 1 downto 0) := x"FFFF_FFFF";
+        constant crc_initial : std_logic_vector (CRC_WIDTH - 1 downto 0) := x"0000_0000";
         
         begin
             if (byte_counter = 0) then
@@ -60,7 +60,7 @@ architecture rtl of crc_checker is
     process (axis_aclk)
     begin
         if rising_edge(axis_aclk) then
-            if (axis_aresetn = '1') then
+            if (axis_aresetn = '0') then
                 byte_counter <= 0;
             else
                 if (byte_counter = PAYLOAD_WIDTH) then
@@ -77,7 +77,7 @@ architecture rtl of crc_checker is
     process (axis_aclk)
     begin
         if rising_edge(axis_aclk) then
-            if (axis_aresetn = '1') then
+            if (axis_aresetn = '0') then
                 crc_reg <= (others => '0');
             else
                 if (byte_counter = PAYLOAD_WIDTH) then
@@ -94,7 +94,7 @@ architecture rtl of crc_checker is
     process (axis_aclk)
     begin
         if rising_edge(axis_aclk) then
-            if (axis_aresetn = '1') then
+            if (axis_aresetn = '0') then
                 data_out <= (others => '0');
                 frame_ready <= '0';
                 crc_flag <= '0';

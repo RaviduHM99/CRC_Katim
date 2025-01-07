@@ -28,6 +28,7 @@ architecture rtl of packet_gen_axi is
     signal byte_count : std_logic_vector(31 downto 0);
     constant byte_count_max : natural := 124;
     constant data_rate: natural := 57;
+    constant data_rate_out: natural := 1;
     signal tx_enable : std_logic;
 
     signal m_axis_tdata : std_logic_vector(TDATA_WIDTH - 1 downto 0);
@@ -72,7 +73,7 @@ architecture rtl of packet_gen_axi is
                 m_axis_tlast_rate <= '0';
             else
                 if (rate_count < data_rate) then
-                    if (m_axis_tready_rate = '1') then
+                    if (m_axis_tready_rate = '1' and enable = '1') then
                         rate_count <= rate_count + 1;
                         m_axis_tlast_rate <= '0';
                         m_axis_tvalid_rate <= '0';
@@ -86,7 +87,7 @@ architecture rtl of packet_gen_axi is
                     m_axis_tvalid_rate <= '0';
                 end if;
 
-                if (rate_count = 0) then 
+                if (rate_count = data_rate_out) then 
                     m_axis_tready <= m_axis_tready_rate;
                     m_axis_tdata_rate <= m_axis_tdata;
                     m_axis_tkeep_rate <= m_axis_tkeep;
@@ -95,6 +96,7 @@ architecture rtl of packet_gen_axi is
                 else 
                     m_axis_tready <= '0';
                 end if;
+
             end if;
          end if;
     end process;

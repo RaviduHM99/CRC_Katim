@@ -5,7 +5,7 @@ use ieee.numeric_std.all;
 
 entity crc_checker_axi is
     generic (
-    PAYLOAD_WIDTH : integer := 5; ---- FRAME WIDTH = PAYLOAD WIDTH + CRC VAL
+    PAYLOAD_WIDTH : integer := 124; ---- FRAME WIDTH = PAYLOAD WIDTH + CRC VAL
     DATA_WIDTH : integer := 32;
     CRC_WIDTH : integer := 32;
     CRC_POLY : std_logic_vector := x"04C1_1DB7"
@@ -15,6 +15,7 @@ entity crc_checker_axi is
     axis_aresetn : in std_logic;
 
     crc_flag : out std_logic;
+    crc_error_count: out std_logic_vector(DATA_WIDTH - 1 downto 0);
 
     s_axis_tdata : in std_logic_vector(DATA_WIDTH - 1 downto 0);
     s_axis_tvalid : in std_logic;
@@ -31,18 +32,18 @@ end crc_checker_axi;
 architecture rtl of crc_checker_axi is
 
     signal crc_reg: std_logic_vector(CRC_WIDTH - 1 downto 0);
-    signal byte_counter: integer range 0 to 500;
+    signal word_counter: integer range 0 to 500;
     
-    function crc_calc (byte_counter : in integer range 0 to 500; data_in : in std_logic_vector(DATA_WIDTH - 1 downto 0); crc_reg : in std_logic_vector(CRC_WIDTH - 1 downto 0)) return std_logic_vector is 
+    function crc_calc (word_counter : in integer range 0 to 500; data_in : in std_logic_vector(DATA_WIDTH - 1 downto 0); crc_reg : in std_logic_vector(CRC_WIDTH - 1 downto 0)) return std_logic_vector is 
         variable crc_val : std_logic_vector(CRC_WIDTH - 1 downto 0) := (others => '0');
         variable crc_temp: std_logic_vector(CRC_WIDTH - 1 downto 0) := (others => '0');
         variable i : integer;
 
         constant loop_var : integer := CRC_WIDTH;
-        constant crc_initial : std_logic_vector (CRC_WIDTH - 1 downto 0) := x"FFFF_FFFF";
+        constant crc_initial : std_logic_vector (CRC_WIDTH - 1 downto 0) := x"0000_0000";
         
         begin
-            if (byte_counter = 0) then
+            if (word_counter = 0) then
                 crc_temp := crc_initial xor data_in;
             else
                 crc_temp := crc_reg;
@@ -64,14 +65,14 @@ architecture rtl of crc_checker_axi is
     process (axis_aclk)
     begin
         if rising_edge(axis_aclk) then
-            if (axis_aresetn = '1') then
-                byte_counter <= 0;
+            if (axis_aresetn = '0') then
+                word_counter <= 0;
             else
                 if (s_axis_tlast = '1') then
-                    byte_counter <= 0;
+                    word_counter <= 0;
                 else  
                     if (s_axis_tvalid = '1' and m_axis_tready = '1') then
-                        byte_counter <= byte_counter + 1;
+                        word_counter <= word_counter + 1;
                     end if;
                 end if;
             end if;
@@ -81,14 +82,14 @@ architecture rtl of crc_checker_axi is
     process (axis_aclk)
     begin
         if rising_edge(axis_aclk) then
-            if (axis_aresetn = '1') then
+            if (axis_aresetn = '0') then
                 crc_reg <= (others => '0');
             else
                 if (s_axis_tlast = '1') then
                     crc_reg <= (others => '0');
                 else
                     if (s_axis_tvalid = '1' and m_axis_tready = '1') then
-                        crc_reg <= crc_calc(byte_counter, s_axis_tdata, crc_reg);
+                        crc_reg <= crc_calc(word_counter, s_axis_tdata, crc_reg);
                     end if;
                 end if;
             end if;
@@ -98,15 +99,13 @@ architecture rtl of crc_checker_axi is
     process (axis_aclk)
     begin
         if rising_edge(axis_aclk) then
-            if (axis_aresetn = '1') then
+            if (axis_aresetn = '0') then
                 m_axis_tdata <= (others => '0');
-                m_axis_tlast <= '0';
                 m_axis_tvalid <= '0';
                 crc_flag <= '0';
             else
                 if (s_axis_tlast = '1') then
                     m_axis_tdata <= (others => '0');
-                    m_axis_tlast <= '1';
                     m_axis_tvalid <= '0';
                     if (crc_reg /= s_axis_tdata) then
                         crc_flag <= '1';
@@ -121,12 +120,27 @@ architecture rtl of crc_checker_axi is
                         m_axis_tdata <= (others => '0');
                         m_axis_tvalid <= '0';
                     end if;
-                    m_axis_tlast <= '0';
+
                     crc_flag <= '0';
                 end if; 
             end if;
         end if;
     end process;
+
+    process (axis_aclk)
+    begin
+        if rising_edge(axis_aclk) then
+            if (axis_aresetn = '0') then
+                crc_error_count <= (others => '0');
+            else
+                if (crc_flag = '1') then
+                    crc_error_count <=  std_logic_vector(unsigned(crc_error_count) + '1');
+                end if;
+            end if;
+        end if;
+    end process;
+
+    m_axis_tlast <= '1' when (word_counter = PAYLOAD_WIDTH and m_axis_tvalid = '1') else '0';
 
     s_axis_tready <= m_axis_tready;
 end rtl;

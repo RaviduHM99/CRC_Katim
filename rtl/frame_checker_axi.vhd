@@ -19,8 +19,8 @@ entity frame_checker_axi is
     s_axis_tlast : in std_logic;
     s_axis_tready : out std_logic;
 
-    frame_count_out: out std_logic_vector (8 downto 0);
-    error_count_out: out std_logic_vector (8 downto 0);
+    frame_count_out: out std_logic_vector (TDATA_WIDTH - 1 downto 0);
+    error_count_out: out std_logic_vector (TDATA_WIDTH - 1 downto 0);
     frame_error : out std_logic
     );
 end frame_checker_axi;
@@ -73,19 +73,25 @@ architecture rtl of frame_checker_axi is
             if rising_edge(axis_aclk) then 
                 if (axis_aresetn = '0') then 
                     s_axis_tready <= '0';
-                    error_counter <= 0;
                     flag_val <= 0;
-                    frame_error <= '0';
-                    packet_reg <= (others => '0');
-                    packet_checker <= 0;
                 else
                     s_axis_tready <= '1';
-
-                    if ((s_axis_tdata /= check_val) and (packet_counter = HEADER_WIDTH)) then
+                    if ((s_axis_tdata /= check_val) and (packet_counter = HEADER_WIDTH) and (s_axis_tvalid = '1')) then
                         flag_val <= 1;
                     elsif (s_axis_tlast = '1') then
                         flag_val <= 0;
                     end if;
+                end if;
+            end if;
+        end process;
+
+        process (axis_aclk)
+        begin
+            if rising_edge(axis_aclk) then 
+                if (axis_aresetn = '0') then 
+                    packet_reg <= (others => '0');
+                    packet_checker <= 0;
+                else
 
                     if (packet_counter = PAYLOAD_INDEX) then
                         packet_reg <= s_axis_tdata;
@@ -100,7 +106,17 @@ architecture rtl of frame_checker_axi is
                         packet_reg <= (others => '0');
                         packet_checker <= 0;
                     end if;
-
+                end if;
+            end if;
+        end process;
+        
+        process (axis_aclk)
+        begin
+            if rising_edge(axis_aclk) then 
+                if (axis_aresetn = '0') then 
+                    error_counter <= 0;
+                    frame_error <= '0';
+                else
                     if (flag_val = 1) or (packet_checker /= 0) then
                         frame_error <= '1';
                     else
@@ -117,6 +133,6 @@ architecture rtl of frame_checker_axi is
             end if;
         end process;
 
-        error_count_out <= std_logic_vector(to_unsigned(error_counter,9));
-        frame_count_out <= std_logic_vector(to_unsigned(frame_counter,9));
+        error_count_out <= std_logic_vector(to_unsigned(error_counter,TDATA_WIDTH));
+        frame_count_out <= std_logic_vector(to_unsigned(frame_counter,TDATA_WIDTH));
 end rtl;

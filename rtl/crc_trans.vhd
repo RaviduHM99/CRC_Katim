@@ -59,7 +59,7 @@ architecture rtl of crc_trans is
     process (axis_aclk)
     begin
         if rising_edge(axis_aclk) then
-            if (axis_aresetn = '1') then
+            if (axis_aresetn = '0') then
                 byte_counter <= 0;
             else
                 if (byte_counter = PAYLOAD_WIDTH) then
@@ -76,7 +76,7 @@ architecture rtl of crc_trans is
     process (axis_aclk)
     begin
         if rising_edge(axis_aclk) then
-            if (axis_aresetn = '1') then
+            if (axis_aresetn = '0') then
                 crc_reg <= (others => '0');
             else
                 if (byte_counter = PAYLOAD_WIDTH) then
@@ -93,7 +93,7 @@ architecture rtl of crc_trans is
     process (axis_aclk)
     begin
         if rising_edge(axis_aclk) then
-            if (axis_aresetn = '1') then
+            if (axis_aresetn = '0') then
                 data_out <= (others => '0');
                 frame_ready <= '0';
             else

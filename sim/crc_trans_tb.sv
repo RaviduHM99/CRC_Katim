@@ -5,7 +5,7 @@ module crc_trans_tb();
             CLK_PERIOD = 10;
 
     logic axis_aclk=0;
-    logic axis_aresetn=1;
+    logic axis_aresetn=0;
 
     logic [DATA_WIDTH - 1:0] data_in = 'd0;
     logic [DATA_WIDTH - 1:0] data_out;
@@ -20,7 +20,7 @@ module crc_trans_tb();
     initial begin
         @(posedge axis_aclk);
         #(CLK_PERIOD)
-        axis_aresetn <= 1'b0;
+        axis_aresetn <= 1'b1;
 
         data_in_valid <= 1;
         data_in <= 'd5;
